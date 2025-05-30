@@ -1,0 +1,28 @@
+name: Education - Node
+
+on: 
+  repository_dispatch:
+    types:
+      - resource-published
+jobs:
+  check-event-status:
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        echo "Status: ${{ github.event.client_payload.status }}"
+        echo "Path: ${{ github.event.client_payload.path }}"
+  notify-connector:
+    if: (github.event.client_payload.status == 200 || github.event.client_payload.status == 204)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Notify education endpoint
+      run: |
+        sleep 1s
+        PAGE_PATH=$(echo "${{ github.event.client_payload.path }}" | sed 's/\.md$//g')
+        WEBSITE_NAME="${{ vars.WEBSITE_NAME }}"
+        URI=$(echo "${{ vars.CONNECTOR_DOMAIN }}/$WEBSITE_NAME")
+        BODY='{ "paths": [ "'$PAGE_PATH'" ] }'
+        BODY="$(echo "$BODY" | jq -c)"
+        response=$(curl -s -H "x-api-key: ${{ secrets.API_KEY }}" -X POST "www.google.com" -d "$BODY")
+        echo "response: $response"
+      shell: bash
